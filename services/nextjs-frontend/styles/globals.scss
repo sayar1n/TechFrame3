@@ -1,0 +1,152 @@
+// Импорт переменных
+@import './variables';
+
+// Импорт анимаций
+@import '../animations/fadeIn.scss';
+@import '../animations/slideIn.scss';
+@import '../animations/transitions.scss';
+
+/* Глобальные стили */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  padding: 0;
+  margin: 0;
+  font-family: $font-family-base;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#map {
+  height: 340px;
+  width: 100%;
+  z-index: 1;
+}
+
+/* Исправление для Leaflet карты */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Исправление для навигации */
+.navbar {
+  border-bottom: 1px solid $border-color;
+
+  &-brand,
+  &-link {
+    text-decoration: none;
+    color: inherit;
+  }
+}
+
+.nav-link {
+  &:hover {
+    color: $primary-color;
+  }
+}
+
+/* Исправление для карточек */
+.card {
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  border-radius: $border-radius;
+
+  &-shadow-sm {
+    box-shadow: $shadow-sm;
+  }
+}
+
+/* Исправление для таблиц */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+/* Исправление для форм */
+.form-control,
+.form-select {
+  &:focus {
+    border-color: lighten($primary-color, 20%);
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba($primary-color, 0.25);
+  }
+}
+
+/* Исправление для кнопок */
+.btn {
+  cursor: pointer;
+  transition: all $transition-fast;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+/* Исправление для списков */
+.list-group-item {
+  border: 1px solid rgba(0, 0, 0, 0.125);
+  padding: 0.75rem 1.25rem;
+
+  &:first-child {
+    border-top-left-radius: $border-radius;
+    border-top-right-radius: $border-radius;
+  }
+
+  &:last-child {
+    border-bottom-left-radius: $border-radius;
+    border-bottom-right-radius: $border-radius;
+  }
+}
+
+/* Исправление для details/summary */
+details {
+  cursor: pointer;
+}
+
+summary {
+  list-style: none;
+  user-select: none;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::before {
+  content: '▶ ';
+  display: inline-block;
+  margin-right: 0.5rem;
+  transition: transform 0.2s;
+}
+
+details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+/* Исправление для pre */
+pre {
+  font-family: $font-family-mono;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Исправление для canvas */
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
