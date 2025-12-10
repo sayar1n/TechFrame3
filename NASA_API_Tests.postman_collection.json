@@ -1,0 +1,537 @@
+{
+	"info": {
+		"_postman_id": "nasa-space-api-tests",
+		"name": "NASA Space Dashboard API Tests",
+		"description": "Коллекция тестов для NASA Space Dashboard API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health & Root",
+			"item": [
+				{
+					"name": "Root Endpoint",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								""
+							]
+						},
+						"description": "Проверка корневого эндпоинта API"
+					},
+					"response": []
+				},
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response time is less than 500ms\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(500);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"health"
+							]
+						},
+						"description": "Проверка здоровья API"
+					},
+					"response": []
+				}
+			],
+			"description": "Тесты для проверки работоспособности API"
+		},
+		{
+			"name": "ISS",
+			"item": [
+				{
+					"name": "Get Last ISS Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has payload or message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.any.keys('payload', 'message', 'id', 'fetched_at');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/last",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"last"
+							]
+						},
+						"description": "Получить последние данные о местоположении ISS"
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch ISS Data",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has payload or message\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.any.keys('payload', 'message', 'id', 'fetched_at');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/fetch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"fetch"
+							]
+						},
+						"description": "Триггер для получения свежих данных ISS"
+					},
+					"response": []
+				},
+				{
+					"name": "ISS Trend",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has movement data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('movement');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/iss/trend?limit=240",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"iss",
+								"trend"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "240"
+								}
+							]
+						},
+						"description": "Получить тренд движения ISS"
+					},
+					"response": []
+				}
+			],
+			"description": "Тесты для эндпоинтов ISS"
+		},
+		{
+			"name": "OSDR",
+			"item": [
+				{
+					"name": "List OSDR Items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has items array\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('items');",
+									"    pm.expect(jsonData.items).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/osdr/list?limit=20",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"osdr",
+								"list"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Получить список элементов OSDR"
+					},
+					"response": []
+				},
+				{
+					"name": "Search OSDR Items",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has total count\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('total');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/osdr/list?limit=20&search=OSD-1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"osdr",
+								"list"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "search",
+									"value": "OSD-1"
+								}
+							]
+						},
+						"description": "Поиск элементов OSDR по запросу"
+					},
+					"response": []
+				},
+				{
+					"name": "Sync OSDR",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has written count\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('written');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/osdr/sync",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"osdr",
+								"sync"
+							]
+						},
+						"description": "Синхронизировать данные OSDR"
+					},
+					"response": []
+				}
+			],
+			"description": "Тесты для эндпоинтов OSDR"
+		},
+		{
+			"name": "Space",
+			"item": [
+				{
+					"name": "Space Summary",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has all space sources\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('apod');",
+									"    pm.expect(jsonData).to.have.property('neo');",
+									"    pm.expect(jsonData).to.have.property('iss');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/space/summary",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"space",
+								"summary"
+							]
+						},
+						"description": "Получить сводку всех космических данных"
+					},
+					"response": []
+				},
+				{
+					"name": "Get APOD Latest",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/space/apod/latest",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"space",
+								"apod",
+								"latest"
+							]
+						},
+						"description": "Получить последние данные APOD"
+					},
+					"response": []
+				}
+			],
+			"description": "Тесты для эндпоинтов Space"
+		},
+		{
+			"name": "JWST",
+			"item": [
+				{
+					"name": "JWST Feed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response time is reasonable\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/jwst/feed?source=jpg&page=1&perPage=24",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"jwst",
+								"feed"
+							],
+							"query": [
+								{
+									"key": "source",
+									"value": "jpg"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "perPage",
+									"value": "24"
+								}
+							]
+						},
+						"description": "Получить ленту изображений JWST"
+					},
+					"response": []
+				}
+			],
+			"description": "Тесты для эндпоинтов JWST"
+		},
+		{
+			"name": "Astronomy",
+			"item": [
+				{
+					"name": "Astronomy Events",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has events\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('events');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/astro/events?days=7&limit=100",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"astro",
+								"events"
+							],
+							"query": [
+								{
+									"key": "days",
+									"value": "7"
+								},
+								{
+									"key": "limit",
+									"value": "100"
+								}
+							]
+						},
+						"description": "Получить события астрономии (NEO)"
+					},
+					"response": []
+				}
+			],
+			"description": "Тесты для эндпоинтов Astronomy"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8081",
+			"type": "string"
+		}
+	]
+}
+
