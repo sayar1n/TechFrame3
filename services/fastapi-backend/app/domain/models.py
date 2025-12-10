@@ -47,6 +47,7 @@ class OsdrItem(BaseModel):
 
 class OsdrListResponse(BaseModel):
     items: list[OsdrItem]
+    total: Optional[int] = None
 
 
 class SpaceLatestResponse(BaseModel):

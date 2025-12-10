@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 interface OsdrItem {
   id: number
@@ -20,15 +20,39 @@ export default function OsdrPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [limit, setLimit] = useState(20)
   const [totalCount, setTotalCount] = useState(0)
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     loadData()
   }, [limit])
 
+  useEffect(() => {
+    // Debounce поиска: ждем 500ms после последнего изменения
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+    
+    searchTimeoutRef.current = setTimeout(() => {
+      loadData()
+    }, 500)
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
+  }, [searchQuery])
+
   const loadData = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/osdr/list?limit=${limit}`)
+      const url = new URL('/api/osdr/list', window.location.origin)
+      url.searchParams.set('limit', limit.toString())
+      if (searchQuery.trim()) {
+        url.searchParams.set('search', searchQuery.trim())
+      }
+      
+      const response = await fetch(url.toString())
       const data = await response.json()
       
       const flattened = flattenOsdr(data.items || [])
@@ -123,15 +147,7 @@ export default function OsdrPage() {
     }
   }
 
-  const filteredItems = items.filter((item) => {
-    if (!searchQuery) return true
-    const query = searchQuery.toLowerCase()
-    return (
-      item.dataset_id?.toLowerCase().includes(query) ||
-      item.title?.toLowerCase().includes(query) ||
-      item.status?.toLowerCase().includes(query)
-    )
-  })
+  const filteredItems = items
 
   return (
     <div className="container py-4">
@@ -247,22 +263,6 @@ export default function OsdrPage() {
                       <div>Обновлено: {formatDate(item.updated_at)}</div>
                       <div>Добавлено: {formatDate(item.inserted_at)}</div>
                     </div>
-
-                    <button
-                      className="btn btn-sm btn-outline-secondary w-100"
-                    >
-                    </button>
-
-                    {isExpanded && (
-                      <div className="mt-3">
-                        <pre
-                          className="bg-light rounded p-2 small mb-0"
-                          style={{ maxHeight: '300px', overflow: 'auto' }}
-                        >
-                          {JSON.stringify(item.raw ?? {}, null, 2)}
-                        </pre>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -274,8 +274,8 @@ export default function OsdrPage() {
       {/* Информация о результатах */}
       {!loading && filteredItems.length > 0 && (
         <div className="mt-4 text-center text-muted small">
-          Показано {filteredItems.length} из {items.length} наборов данных
-          {searchQuery && ` (отфильтровано по запросу "${searchQuery}")`}
+          Показано {filteredItems.length} из {totalCount} наборов данных
+          {searchQuery && ` (найдено по запросу "${searchQuery}")`}
         </div>
       )}
     </div>

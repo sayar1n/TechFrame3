@@ -24,22 +24,26 @@ async def osdr_sync_handler(session: AsyncSession) -> OsdrSyncResponse:
 async def osdr_list_handler(
     session: AsyncSession,
     limit: int = 20,
+    search: Optional[str] = None,
 ) -> OsdrListResponse:
-    """Получить список элементов OSDR"""
+    """Получить список элементов OSDR с опциональным поиском"""
     try:
         repo = OsdrRepo(session)
-        items = await repo.list_items(limit=limit)
+        items = await repo.list_items(limit=limit, search=search)
         
-        # Если данных нет, пытаемся синхронизировать
-        if not items:
+        # Если данных нет и поиск не выполняется, пытаемся синхронизировать
+        if not items and not search:
             try:
                 client = OsdrClient()
                 service = OsdrService(repo, client)
                 await service.sync_and_store()
-                items = await repo.list_items(limit=limit)
+                items = await repo.list_items(limit=limit, search=search)
             except Exception as sync_error:
                 # Если синхронизация не удалась, возвращаем пустой список
                 pass
+        
+        # Получаем общее количество для отображения
+        total_count = await repo.count(search=search)
         
         # Обработка OSDR данных: flattenOsdr - преобразует {"OSD-1": {...}} в плоский список
         processed_items = []
@@ -154,7 +158,7 @@ async def osdr_list_handler(
                     )
                 )
         
-        return OsdrListResponse(items=processed_items)
+        return OsdrListResponse(items=processed_items, total=total_count)
     except Exception as e:
         raise InternalServerError(detail=f"Error fetching OSDR list: {str(e)}")
 

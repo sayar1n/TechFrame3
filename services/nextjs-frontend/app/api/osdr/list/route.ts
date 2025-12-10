@@ -6,8 +6,15 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const limit = searchParams.get('limit') || '20'
+    const search = searchParams.get('search') || ''
     
-    const response = await fetch(`${API_BASE}/osdr/list?limit=${limit}`, {
+    const url = new URL(`${API_BASE}/osdr/list`)
+    url.searchParams.set('limit', limit)
+    if (search) {
+      url.searchParams.set('search', search)
+    }
+    
+    const response = await fetch(url.toString(), {
       headers: {
         'Content-Type': 'application/json',
       },

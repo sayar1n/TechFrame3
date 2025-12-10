@@ -82,17 +82,34 @@ class OsdrRepo:
         row = result.fetchone()
         return row[0] if row else 0
     
-    async def list_items(self, limit: int = 20) -> list[dict[str, Any]]:
-        """Получить список элементов OSDR"""
-        result = await self.session.execute(
-            text("""
-                SELECT id, dataset_id, title, status, rest_url, updated_at, inserted_at, raw
-                FROM osdr_items
-                ORDER BY inserted_at DESC
-                LIMIT :limit
-            """),
-            {"limit": limit}
-        )
+    async def list_items(self, limit: int = 20, search: Optional[str] = None) -> list[dict[str, Any]]:
+        if search:
+            # Поиск по dataset_id, title или status (без учета регистра)
+            # Также ищем в JSONB поле raw (включая ключи вида OSD-xxx)
+            search_pattern = f"%{search.lower()}%"
+            result = await self.session.execute(
+                text("""
+                    SELECT id, dataset_id, title, status, rest_url, updated_at, inserted_at, raw
+                    FROM osdr_items
+                    WHERE LOWER(COALESCE(dataset_id, '')) LIKE :search_pattern
+                       OR LOWER(COALESCE(title, '')) LIKE :search_pattern
+                       OR LOWER(COALESCE(status, '')) LIKE :search_pattern
+                       OR LOWER(raw::text) LIKE :search_pattern
+                    ORDER BY inserted_at DESC
+                    LIMIT :limit
+                """),
+                {"limit": limit, "search_pattern": search_pattern}
+            )
+        else:
+            result = await self.session.execute(
+                text("""
+                    SELECT id, dataset_id, title, status, rest_url, updated_at, inserted_at, raw
+                    FROM osdr_items
+                    ORDER BY inserted_at DESC
+                    LIMIT :limit
+                """),
+                {"limit": limit}
+            )
         rows = result.fetchall()
         return [
             {
@@ -108,11 +125,25 @@ class OsdrRepo:
             for row in rows
         ]
     
-    async def count(self) -> int:
-        """Получить количество элементов OSDR"""
-        result = await self.session.execute(
-            text("SELECT COUNT(*) FROM osdr_items")
-        )
+    async def count(self, search: Optional[str] = None) -> int:
+        """Получить количество элементов OSDR с опциональным поиском"""
+        if search:
+            search_pattern = f"%{search.lower()}%"
+            result = await self.session.execute(
+                text("""
+                    SELECT COUNT(*)
+                    FROM osdr_items
+                    WHERE LOWER(COALESCE(dataset_id, '')) LIKE :search_pattern
+                       OR LOWER(COALESCE(title, '')) LIKE :search_pattern
+                       OR LOWER(COALESCE(status, '')) LIKE :search_pattern
+                       OR LOWER(raw::text) LIKE :search_pattern
+                """),
+                {"search_pattern": search_pattern}
+            )
+        else:
+            result = await self.session.execute(
+                text("SELECT COUNT(*) FROM osdr_items")
+            )
         row = result.fetchone()
         return row[0] if row else 0
 
