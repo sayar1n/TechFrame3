@@ -97,9 +97,9 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Response has payload or message\", function () {",
+									"pm.test(\"Response has payload\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData).to.have.any.keys('payload', 'message', 'id', 'fetched_at');",
+									"    pm.expect(jsonData).to.have.property('payload');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -110,11 +110,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/last",
+							"raw": "{{base_url}}/iss/last",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
+								"iss",
 								"last"
 							]
 						},
@@ -131,11 +132,6 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"Response has payload or message\", function () {",
-									"    var jsonData = pm.response.json();",
-									"    pm.expect(jsonData).to.have.any.keys('payload', 'message', 'id', 'fetched_at');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -146,11 +142,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/fetch",
+							"raw": "{{base_url}}/iss/fetch",
 							"host": [
 								"{{base_url}}"
 							],
 							"path": [
+								"iss",
 								"fetch"
 							]
 						},

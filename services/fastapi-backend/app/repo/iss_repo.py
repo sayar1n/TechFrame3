@@ -66,4 +66,12 @@ class IssRepo:
             }
             for row in reversed(rows)
         ]
+    
+    async def clear_all_data(self) -> int:
+        """Удалить все данные из iss_fetch_log"""
+        result = await self.session.execute(
+            text("DELETE FROM iss_fetch_log")
+        )
+        await self.session.commit()
+        return result.rowcount
 

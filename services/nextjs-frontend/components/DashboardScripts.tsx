@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { exportAstroEventsToExcel, exportAstroEventsToCSV } from '@/utils/exportUtils'
 
 declare global {
   interface Window {
@@ -11,16 +12,13 @@ declare global {
 
 export default function DashboardScripts() {
   useEffect(() => {
-    // Загрузка данных ISS и инициализация карты/графиков
     if (typeof window !== 'undefined' && window.L && window.Chart) {
       const initDashboard = async () => {
         try {
-          // Загрузка последних данных ISS
           const lastResponse = await fetch('/api/iss/last')
           const lastData = await lastResponse.json()
           const payload = lastData.payload || {}
           
-          // Инициализация карты
           const lat0 = Number(payload.latitude || 0)
           const lon0 = Number(payload.longitude || 0)
           const mapEl = document.getElementById('map')
@@ -39,7 +37,6 @@ export default function DashboardScripts() {
               .addTo(map)
               .bindPopup('МКС')
             
-            // Инициализация графиков
             const speedChart = new window.Chart(document.getElementById('issSpeedChart'), {
               type: 'line',
               data: {
@@ -64,17 +61,44 @@ export default function DashboardScripts() {
               },
             })
             
-            // Функция загрузки тренда
             const loadTrend = async () => {
               try {
+                const lastResponse = await fetch('/api/iss/last')
+                const lastData = await lastResponse.json()
+                
+                if (lastData.error) {
+                  console.error('ISS API error:', lastData.error)
+                  return
+                }
+                
+                const currentPayload = lastData.payload || {}
+                const currentLat = Number(currentPayload.latitude)
+                const currentLon = Number(currentPayload.longitude)
+                
                 const trendResponse = await fetch('/api/iss/trend?limit=240')
                 const trendData = await trendResponse.json()
+                
+                if (trendData.error) {
+                  console.error('Trend API error:', trendData.error)
+                  return
+                }
+                
                 const points = trendData.points || []
                 
                 if (points.length) {
                   const pts = points.map((p: any) => [p.lat, p.lon])
                   trail.setLatLngs(pts)
-                  marker.setLatLng(pts[pts.length - 1])
+                  
+                  const targetLat = !isNaN(currentLat) && currentLat !== 0 ? currentLat : pts[pts.length - 1][0]
+                  const targetLon = !isNaN(currentLon) && currentLon !== 0 ? currentLon : pts[pts.length - 1][1]
+                  
+                  if (!isNaN(targetLat) && !isNaN(targetLon)) {
+                    marker.setLatLng([targetLat, targetLon])
+                    map.panTo([targetLat, targetLon], { animate: false })
+                  }
+                } else if (!isNaN(currentLat) && !isNaN(currentLon) && currentLat !== 0 && currentLon !== 0) {
+                  marker.setLatLng([currentLat, currentLon])
+                  map.panTo([currentLat, currentLon], { animate: false })
                 }
                 
                 const times = points.map((p: any) => new Date(p.at).toLocaleTimeString())
@@ -90,8 +114,40 @@ export default function DashboardScripts() {
               }
             }
             
+            const clearMapData = async () => {
+              try {
+                const response = await fetch('/api/iss/clear', {
+                  method: 'DELETE',
+                })
+                const result = await response.json()
+                
+                if (result.success) {
+                  trail.setLatLngs([])
+                  speedChart.data.labels = []
+                  speedChart.data.datasets[0].data = []
+                  speedChart.update()
+                  altChart.data.labels = []
+                  altChart.data.datasets[0].data = []
+                  altChart.update()
+                } else {
+                  console.error('Failed to clear ISS data:', result.error)
+                  alert('Ошибка при очистке данных: ' + (result.error || 'Неизвестная ошибка'))
+                }
+              } catch (e) {
+                console.error('Error clearing ISS data:', e)
+                alert('Ошибка при очистке данных')
+              }
+            }
+            
+            const clearBtn = document.getElementById('clearMapBtn')
+            if (clearBtn) {
+              clearBtn.addEventListener('click', clearMapData)
+            }
+            
             loadTrend()
-            setInterval(loadTrend, 15000)
+            const trendInterval = setInterval(loadTrend, 15000)
+            
+            mapEl.dataset.intervalId = trendInterval.toString()
             
             mapEl.dataset.initialized = 'true'
           }
@@ -102,13 +158,11 @@ export default function DashboardScripts() {
       
       initDashboard()
       
-      // Загрузка данных космоса (APOD, NEO, Солнечная активность, SpaceX)
       const loadSpaceData = async () => {
         try {
           const response = await fetch('/api/space/summary')
           const data = await response.json()
           
-          // APOD карточка
           const apodCard = document.getElementById('apodCard')
           if (apodCard && data.apod?.payload) {
             const apod = data.apod.payload
@@ -124,7 +178,6 @@ export default function DashboardScripts() {
             `
           }
           
-          // NEO карточка
           const neoCard = document.getElementById('neoCard')
           if (neoCard && data.neo?.payload) {
             const neo = data.neo.payload
@@ -145,13 +198,11 @@ export default function DashboardScripts() {
             `
           }
           
-          // Солнечная активность карточка
           const solarCard = document.getElementById('solarCard')
           if (solarCard) {
             const flr = data.flr?.payload || []
             const cme = data.cme?.payload || []
             
-            // Безопасная проверка массивов
             const flrArray = Array.isArray(flr) ? flr : []
             const cmeArray = Array.isArray(cme) ? cme : []
             const flrCount = flrArray.length || 0
@@ -165,7 +216,6 @@ export default function DashboardScripts() {
               : 'Нет свежих событий'
           }
           
-          // SpaceX карточка
           const spacexCard = document.getElementById('spacexCard')
           if (spacexCard && data.spacex?.payload) {
             const spacex = data.spacex.payload
@@ -190,8 +240,7 @@ export default function DashboardScripts() {
       
       loadSpaceData()
     }
-    
-    // JWST галерея
+
     const track = document.getElementById('jwstTrack')
     const info = document.getElementById('jwstInfo')
     const form = document.getElementById('jwstFilter') as HTMLFormElement
@@ -247,7 +296,6 @@ export default function DashboardScripts() {
       })
     }
     
-    // Навигация JWST - скроллим по ширине контейнера (4 элемента)
     const prevBtn = document.querySelector('.jwst-prev')
     const nextBtn = document.querySelector('.jwst-next')
     if (prevBtn && track) {
@@ -263,21 +311,23 @@ export default function DashboardScripts() {
       })
     }
     
-    // Стартовые данные JWST
     loadFeed({ source: 'jpg', perPage: '24' })
     
-    // Astronomy события - исправленная версия на основе оригинального кода
     const astroForm = document.getElementById('astroForm') as HTMLFormElement
     const astroBody = document.getElementById('astroBody')
     const astroRaw = document.getElementById('astroRaw')
+    
+    let astroDataForExport: any[] = []
+    let astroData: any[] = []
+    let currentSortColumn = 'date'
+    let currentSortOrder: 'asc' | 'desc' = 'desc'
+    let currentSearchQuery = ''
     
     if (astroForm && astroBody && astroRaw) {
       const normalize = (node: any) => {
         const name = node.name || node.body || node.object || node.target || ''
         const type = node.type || node.event_type || node.category || node.kind || ''
-        // Используем поле "when" напрямую, если оно есть
         const when = node.when || node.time || node.date || node.occursAt || node.peak || node.instant || ''
-        // Используем поле "extra" напрямую, если оно есть
         const extra = node.extra || node.magnitude || node.mag || node.altitude || node.note || ''
         return { name, type, when, extra }
       }
@@ -285,7 +335,6 @@ export default function DashboardScripts() {
       const loadAstro = async (q: Record<string, string>) => {
         astroBody.innerHTML = '<tr><td colspan="5" class="text-muted">Загрузка…</td></tr>'
         
-        // Преобразуем параметры для нового API (только days и limit)
         const params: Record<string, string> = {}
         if (q.days) params.days = q.days
         if (q.limit) params.limit = q.limit
@@ -297,42 +346,30 @@ export default function DashboardScripts() {
           const js = await r.json()
           astroRaw.textContent = JSON.stringify(js, null, 2)
           
-          // Проверяем, есть ли ошибка в ответе
           if (js.error) {
             astroBody.innerHTML = `<tr><td colspan="5" class="text-danger">${js.error}</td></tr>`
             return
           }
           
-          // Новый формат: события находятся в js.events
           const events = js.events || []
           if (!events.length) {
             astroBody.innerHTML = '<tr><td colspan="5" class="text-muted">события не найдены</td></tr>'
             return
           }
           
-          // Нормализуем события для отображения
-          const rows = events.map((event: any) => {
+          const rows = events.map((event: any, i: number) => {
             const normalized = normalize(event)
-            // Используем номер события из данных, если есть
             return {
               ...normalized,
-              number: event.number || event.number || ''
+              number: event.number || (i + 1)
             }
           })
           
-          astroBody.innerHTML = rows
-            .map(
-              (r: any, i: number) => `
-              <tr>
-                <td>${r.number || (i + 1)}</td>
-                <td>${r.name || '—'}</td>
-                <td>${r.type || '—'}</td>
-                <td><code>${r.when || '—'}</code></td>
-                <td>${r.extra || ''}</td>
-              </tr>
-            `
-            )
-            .join('')
+          astroDataForExport = rows
+          astroData = rows
+          
+          renderAstroTable()
+          setupAstroExportButtons()
         } catch (e: any) {
           console.error('Error loading astronomy events:', e)
           astroBody.innerHTML = '<tr><td colspan="5" class="text-danger">ошибка загрузки</td></tr>'
@@ -345,6 +382,162 @@ export default function DashboardScripts() {
         loadAstro(q)
       })
       
+      const renderAstroTable = () => {
+        if (!astroBody) return
+
+        let filtered = astroData
+        if (currentSearchQuery.trim()) {
+          const query = currentSearchQuery.toLowerCase()
+          filtered = astroData.filter((r: any) => {
+            return (
+              (r.name || '').toLowerCase().includes(query) ||
+              (r.type || '').toLowerCase().includes(query) ||
+              (r.when || '').toLowerCase().includes(query) ||
+              (r.extra || '').toLowerCase().includes(query)
+            )
+          })
+        }
+
+        filtered = [...filtered].sort((a: any, b: any) => {
+          let aValue: any
+          let bValue: any
+
+          switch (currentSortColumn) {
+            case 'index':
+              aValue = parseInt(a.number || '0') || 0
+              bValue = parseInt(b.number || '0') || 0
+              break
+            case 'body':
+              aValue = (a.name || '').toLowerCase()
+              bValue = (b.name || '').toLowerCase()
+              break
+            case 'event':
+              aValue = (a.type || '').toLowerCase()
+              bValue = (b.type || '').toLowerCase()
+              break
+            case 'date':
+              aValue = new Date(a.when || 0).getTime()
+              bValue = new Date(b.when || 0).getTime()
+              break
+            default:
+              return 0
+          }
+
+          if (typeof aValue === 'string' && typeof bValue === 'string') {
+            const comparison = aValue.localeCompare(bValue, 'ru')
+            return currentSortOrder === 'asc' ? comparison : -comparison
+          } else {
+            const comparison = aValue - bValue
+            return currentSortOrder === 'asc' ? comparison : -comparison
+          }
+        })
+
+        // Обновление индикаторов сортировки
+        const sortIndicators = ['sortIndex', 'sortBody', 'sortEvent', 'sortDate']
+        sortIndicators.forEach(id => {
+          const el = document.getElementById(id)
+          if (el) el.textContent = '↕'
+        })
+        
+        const activeIndicator = document.getElementById(`sort${currentSortColumn.charAt(0).toUpperCase() + currentSortColumn.slice(1)}`)
+        if (activeIndicator) {
+          activeIndicator.textContent = currentSortOrder === 'asc' ? '↑' : '↓'
+        }
+
+        astroBody.innerHTML = filtered
+          .map(
+            (r: any, i: number) => `
+            <tr>
+              <td>${r.number || (i + 1)}</td>
+              <td>${r.name || '—'}</td>
+              <td>${r.type || '—'}</td>
+              <td><code>${r.when || '—'}</code></td>
+              <td>${r.extra || ''}</td>
+            </tr>
+          `
+          )
+          .join('')
+
+        if (filtered.length === 0) {
+          astroBody.innerHTML = '<tr><td colspan="5" class="text-muted">нет данных</td></tr>'
+        }
+      }
+
+      const handleAstroSort = (column: string) => {
+        if (currentSortColumn === column) {
+          currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc'
+        } else {
+          currentSortColumn = column
+          currentSortOrder = 'asc'
+        }
+        renderAstroTable()
+      }
+
+      const setupAstroExportButtons = () => {
+        const exportExcelBtn = document.getElementById('exportAstroExcel')
+        const exportCSVBtn = document.getElementById('exportAstroCSV')
+        
+        if (exportExcelBtn) {
+          exportExcelBtn.onclick = () => {
+            if (astroDataForExport.length > 0) {
+              exportAstroEventsToExcel(astroDataForExport)
+            } else {
+              alert('Нет данных для экспорта')
+            }
+          }
+        }
+        
+        if (exportCSVBtn) {
+          exportCSVBtn.onclick = () => {
+            if (astroDataForExport.length > 0) {
+              exportAstroEventsToCSV(astroDataForExport)
+            } else {
+              alert('Нет данных для экспорта')
+            }
+          }
+        }
+      }
+
+      const sortColumnSelect = document.getElementById('astroSortColumn') as HTMLSelectElement
+      const sortOrderSelect = document.getElementById('astroSortOrder') as HTMLSelectElement
+      const searchInput = document.getElementById('astroSearch') as HTMLInputElement
+
+      if (sortColumnSelect) {
+        sortColumnSelect.addEventListener('change', (e) => {
+          currentSortColumn = (e.target as HTMLSelectElement).value
+          renderAstroTable()
+        })
+      }
+
+      if (sortOrderSelect) {
+        sortOrderSelect.addEventListener('change', (e) => {
+          currentSortOrder = (e.target as HTMLSelectElement).value as 'asc' | 'desc'
+          renderAstroTable()
+        })
+      }
+
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          currentSearchQuery = (e.target as HTMLInputElement).value
+          renderAstroTable()
+        })
+      }
+
+      const setupSortableHeaders = () => {
+        const sortableHeaders = document.querySelectorAll('.sortable-th')
+        sortableHeaders.forEach((header) => {
+          if (header instanceof HTMLElement && !header.dataset.listenerAdded) {
+            const column = header.getAttribute('data-sort')
+            if (column) {
+              header.dataset.listenerAdded = 'true'
+              header.addEventListener('click', () => {
+                handleAstroSort(column)
+              })
+            }
+          }
+        })
+      }
+      
       // Автозагрузка при загрузке страницы
       const daysInput = astroForm.querySelector('[name="days"]') as HTMLInputElement
       const limitInput = astroForm.querySelector('[name="limit"]') as HTMLInputElement
@@ -354,6 +547,11 @@ export default function DashboardScripts() {
           limit: limitInput.value || '10',
         })
       }
+      
+      setTimeout(() => {
+        setupAstroExportButtons()
+        setupSortableHeaders()
+      }, 500)
     }
   }, [])
   

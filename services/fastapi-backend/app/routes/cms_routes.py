@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 from app.handlers.cms_handler import get_cms_block
+from app.middleware.rate_limit import limiter
 
 router = APIRouter()
 
 
 @router.get("/cms/block")
-async def block(slug: str = Query("dashboard_experiment", description="Slug CMS блока")):
+@limiter.limit("30/minute")
+async def block(request: Request, slug: str = Query("dashboard_experiment", description="Slug CMS блока")):
     """Получить CMS блок по slug"""
     result = await get_cms_block(slug)
     if result:

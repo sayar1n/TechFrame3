@@ -6,6 +6,10 @@
 @import '../animations/slideIn.scss';
 @import '../animations/transitions.scss';
 
+// Импорт стилей страниц
+@import './iss.scss';
+@import './osdr.scss';
+
 /* Глобальные стили */
 * {
   box-sizing: border-box;

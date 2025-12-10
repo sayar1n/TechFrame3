@@ -1,5 +1,44 @@
 /* Стили для Dashboard страницы */
 
+/* ДОБАВЛЕНО: Стили для секций dashboard */
+section {
+  animation: fadeIn 0.4s ease-in-out;
+  
+  h2 {
+    color: #212529;
+    font-weight: 600;
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Убираем анимацию для секции "Визуализация МКС" */
+section[style*="animation: none"] {
+  animation: none !important;
+}
+
+/* Убираем анимацию для "Последний снимок" и "Тренд движения" */
+.card[style*="animation: none"] .list-group-item,
+.card-body[style*="animation: none"] .list-group-item,
+.list-group[style*="animation: none"] .list-group-item {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* ДОБАВЛЕНО: Улучшенные стили для заголовка страницы */
+.h3 {
+  font-weight: 700;
+  color: #212529;
+}
+
+/* ДОБАВЛЕНО: Визуальные разделители между секциями */
+section + section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e9ecef;
+}
+
 /* JWST слайдер - исправленные стили */
 .jwst-slider {
   position: relative;
@@ -227,5 +266,30 @@
   background-color: #6c757d;
   border-color: #6c757d;
   color: white;
+}
+
+/* ДОБАВЛЕНО: Стили для сортируемых заголовков таблицы NeoWs */
+.sortable-th {
+  user-select: none;
+  transition: background-color 0.2s ease;
+  position: relative;
+
+  &:hover {
+    background-color: #e9ecef !important;
+  }
+
+  .text-muted {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+  }
+}
+
+/* ДОБАВЛЕНО: Улучшенная таблица с hover эффектами */
+.table-hover tbody tr {
+  transition: background-color 0.15s ease;
+  
+  &:hover {
+    background-color: #f8f9fa;
+  }
 }
 

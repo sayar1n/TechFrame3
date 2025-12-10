@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 from app.handlers.jwst_handler import jwst_feed_handler
+from app.middleware.rate_limit import limiter
 
 router = APIRouter()
 
 
 @router.get("/jwst/feed")
+@limiter.limit("40/minute")
 async def feed(
+    request: Request,
     source: str = Query("jpg", description="Источник: jpg, suffix, program"),
     suffix: str | None = Query(None, description="Суффикс для фильтрации"),
     program: str | None = Query(None, description="ID программы"),

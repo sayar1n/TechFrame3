@@ -72,7 +72,7 @@ app.add_exception_handler(RateLimitExceeded, rate_limit_handler)
 
 # Подключение роутов
 app.include_router(health_routes.router, tags=["Health"])
-app.include_router(iss_routes.router, tags=["ISS"])
+app.include_router(iss_routes.router, prefix="/iss", tags=["ISS"])
 app.include_router(osdr_routes.router, tags=["OSDR"])
 app.include_router(space_routes.router, tags=["Space"])
 app.include_router(jwst_routes.router, tags=["JWST"])

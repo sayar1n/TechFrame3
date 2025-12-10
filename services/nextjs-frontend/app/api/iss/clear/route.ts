@@ -3,9 +3,8 @@ import { checkRateLimit, rateLimitConfigs } from '@/utils/rateLimit'
 
 const API_BASE = process.env.API_URL || 'http://fastapi-backend:8000'
 
-export async function GET(request: NextRequest) {
-  // ДОБАВЛЕНО: Rate limiting для OSDR endpoints
-  const rateLimitResult = checkRateLimit(request, rateLimitConfigs.osdr)
+export async function DELETE(request: NextRequest) {
+  const rateLimitResult = checkRateLimit(request, rateLimitConfigs.iss)
   
   if (!rateLimitResult.allowed) {
     return NextResponse.json(
@@ -18,7 +17,7 @@ export async function GET(request: NextRequest) {
         status: 429,
         headers: {
           'Retry-After': Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000).toString(),
-          'X-RateLimit-Limit': rateLimitConfigs.osdr.maxRequests.toString(),
+          'X-RateLimit-Limit': rateLimitConfigs.iss.maxRequests.toString(),
           'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
           'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
         },
@@ -27,42 +26,39 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { searchParams } = new URL(request.url)
-    const limit = searchParams.get('limit') || '20'
-    const search = searchParams.get('search') || ''
-    
-    const url = new URL(`${API_BASE}/osdr/list`)
-    url.searchParams.set('limit', limit)
-    if (search) {
-      url.searchParams.set('search', search)
-    }
-    
-    const response = await fetch(url.toString(), {
+    const response = await fetch(`${API_BASE}/iss/clear`, {
+      method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
       },
-      // signal: AbortSignal.timeout(10000),
     })
     
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`FastAPI error (${response.status}):`, errorText)
       return NextResponse.json(
-        { error: 'Failed to fetch OSDR list', details: errorText },
-        { status: response.status }
+        { error: 'Failed to clear ISS data', details: errorText },
+        {
+          status: response.status,
+          headers: {
+            'X-RateLimit-Limit': rateLimitConfigs.iss.maxRequests.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
+          },
+        }
       )
     }
     
     const data = await response.json()
     return NextResponse.json(data, {
       headers: {
-        'X-RateLimit-Limit': rateLimitConfigs.osdr.maxRequests.toString(),
+        'X-RateLimit-Limit': rateLimitConfigs.iss.maxRequests.toString(),
         'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
         'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
       },
     })
   } catch (error: any) {
-    console.error('Error fetching OSDR list:', error)
+    console.error('Error clearing ISS data:', error)
     return NextResponse.json(
       { error: 'Internal server error', details: error.message },
       { status: 500 }

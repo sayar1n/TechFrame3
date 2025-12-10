@@ -1,0 +1,58 @@
+/* Стили для OSDR страницы */
+
+/* Анимации для карточек наборов данных */
+.osdr-card {
+  animation: fadeIn 0.4s ease-in-out;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
+  }
+}
+
+/* Анимация для фильтров */
+.osdr-filters {
+  animation: slideInFromTop 0.4s ease-out;
+}
+
+/* Анимация для списка */
+.osdr-list {
+  .osdr-card {
+    animation-delay: calc(var(--index, 0) * 0.05s);
+  }
+}
+
+/* Стили для поиска */
+.osdr-search {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  }
+}
+
+/* Стили для badge статуса */
+.status-badge {
+  animation: fadeIn 0.3s ease-in-out;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+/* Анимация для спиннера загрузки */
+.loading-spinner {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Стили для пустого состояния */
+.empty-state {
+  animation: fadeIn 0.5s ease-in-out;
+  padding: 3rem 1rem;
+  text-align: center;
+  color: #6c757d;
+}
+

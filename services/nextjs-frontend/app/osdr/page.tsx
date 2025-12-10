@@ -1,153 +1,28 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import '@/styles/osdr.scss'
+import { OsdrProvider, useOsdr } from '@/contexts/OsdrContext'
 
-interface OsdrItem {
-  id: number
-  dataset_id?: string
-  title?: string
-  rest_url?: string
-  updated_at?: string
-  inserted_at?: string
-  status?: string
-  raw?: any
-}
+function OsdrContent() {
+  const {
+    loading,
+    searchQuery,
+    setSearchQuery,
+    limit,
+    setLimit,
+    totalCount,
+    expandedItems,
+    toggleItem,
+    formatDate,
+    loadData,
+    sortColumn,
+    setSortColumn,
+    sortOrder,
+    setSortOrder,
+    filteredAndSortedItems,
+  } = useOsdr()
 
-export default function OsdrPage() {
-  const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set())
-  const [items, setItems] = useState<OsdrItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [limit, setLimit] = useState(20)
-  const [totalCount, setTotalCount] = useState(0)
-  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  useEffect(() => {
-    loadData()
-  }, [limit])
-
-  useEffect(() => {
-    // Debounce поиска: ждем 500ms после последнего изменения
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current)
-    }
-    
-    searchTimeoutRef.current = setTimeout(() => {
-      loadData()
-    }, 500)
-
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current)
-      }
-    }
-  }, [searchQuery])
-
-  const loadData = async () => {
-    try {
-      setLoading(true)
-      const url = new URL('/api/osdr/list', window.location.origin)
-      url.searchParams.set('limit', limit.toString())
-      if (searchQuery.trim()) {
-        url.searchParams.set('search', searchQuery.trim())
-      }
-      
-      const response = await fetch(url.toString())
-      const data = await response.json()
-      
-      const flattened = flattenOsdr(data.items || [])
-      setItems(flattened)
-      setTotalCount(data.total || flattened.length)
-    } catch (e) {
-      console.error('Error loading OSDR data:', e)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const flattenOsdr = (items: any[]): OsdrItem[] => {
-    const out: OsdrItem[] = []
-    for (const row of items) {
-      if (typeof row === 'object' && row !== null) {
-        // Проверяем, является ли raw словарём с ключами OSD-xxx
-        const raw = row.raw || row
-        if (looksOsdrDict(raw)) {
-          for (const [k, v] of Object.entries(raw)) {
-            if (typeof v === 'object' && v !== null && isString(k) && k.startsWith('OSD-')) {
-              const rest = (v as any).REST_URL || (v as any).rest_url || (v as any).rest || null
-              const title = (v as any).title || (v as any).name || null
-              out.push({
-                id: row.id || out.length + 1,
-                dataset_id: k,
-                title: title || (rest ? basename(rest) : null),
-                rest_url: rest,
-                updated_at: row.updated_at,
-                inserted_at: row.inserted_at,
-                status: row.status || 'published',
-                raw: v,
-              })
-            }
-          }
-        } else {
-          out.push({
-            id: row.id || out.length + 1,
-            dataset_id: row.dataset_id,
-            title: row.title,
-            rest_url: row.rest_url || (raw?.REST_URL || raw?.rest_url || null),
-            updated_at: row.updated_at,
-            inserted_at: row.inserted_at,
-            status: row.status || 'published',
-            raw: raw,
-          })
-        }
-      }
-    }
-    return out
-  }
-
-  const looksOsdrDict = (raw: any): boolean => {
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return false
-    for (const k of Object.keys(raw)) {
-      if (typeof k === 'string' && k.startsWith('OSD-')) return true
-      if (raw[k] && typeof raw[k] === 'object' && (raw[k].REST_URL || raw[k].rest_url)) return true
-    }
-    return false
-  }
-
-  const isString = (val: any): val is string => typeof val === 'string'
-
-  const basename = (url: string): string => {
-    try {
-      return url.split('/').filter(Boolean).pop() || url
-    } catch {
-      return url
-    }
-  }
-
-  const toggleItem = (id: number) => {
-    const newExpanded = new Set(expandedItems)
-    if (newExpanded.has(id)) {
-      newExpanded.delete(id)
-    } else {
-      newExpanded.add(id)
-    }
-    setExpandedItems(newExpanded)
-  }
-
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '—'
-    try {
-      return new Date(dateStr).toLocaleDateString('ru-RU', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      })
-    } catch {
-      return dateStr
-    }
-  }
-
-  const filteredItems = items
+  const filteredItems = filteredAndSortedItems
 
   return (
     <div className="container py-4">
@@ -162,21 +37,45 @@ export default function OsdrPage() {
         </div>
       </div>
 
-      {/* Фильтры и поиск */}
-      <div className="card shadow-sm mb-4">
+      <div className="card shadow-sm mb-4 osdr-filters">
         <div className="card-body">
           <div className="row g-3 align-items-end">
-            <div className="col-md-6">
+            <div className="col-md-4">
               <label className="form-label small text-muted">Поиск</label>
               <input
                 type="text"
-                className="form-control"
+                className="form-control osdr-search"
                 placeholder="Поиск по названию, ID или статусу..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="col-md-3">
+            <div className="col-md-2">
+              <label className="form-label small text-muted">Сортировать по</label>
+              <select
+                className="form-select"
+                value={sortColumn}
+                onChange={(e) => setSortColumn(e.target.value)}
+              >
+                <option value="inserted_at">Дата добавления</option>
+                <option value="updated_at">Дата обновления</option>
+                <option value="dataset_id">ID набора</option>
+                <option value="title">Название</option>
+                <option value="status">Статус</option>
+              </select>
+            </div>
+            <div className="col-md-2">
+              <label className="form-label small text-muted">Порядок</label>
+              <select
+                className="form-select"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'asc' | 'desc')}
+              >
+                <option value="asc">По возрастанию</option>
+                <option value="desc">По убыванию</option>
+              </select>
+            </div>
+            <div className="col-md-2">
               <label className="form-label small text-muted">Показать</label>
               <select
                 className="form-select"
@@ -189,7 +88,8 @@ export default function OsdrPage() {
                 <option value={100}>100</option>
               </select>
             </div>
-            <div className="col-md-3">
+            <div className="col-md-2">
+              <label className="form-label small text-muted">&nbsp;</label>
               <button className="btn btn-primary w-100" onClick={loadData} disabled={loading}>
                 {loading ? 'Загрузка...' : 'Обновить'}
               </button>
@@ -198,9 +98,8 @@ export default function OsdrPage() {
         </div>
       </div>
 
-      {/* Список наборов данных */}
       {loading ? (
-        <div className="text-center py-5">
+        <div className="text-center py-5 loading-spinner">
           <div className="spinner-border text-primary" role="status">
             <span className="visually-hidden">Загрузка...</span>
           </div>
@@ -208,23 +107,23 @@ export default function OsdrPage() {
         </div>
       ) : filteredItems.length === 0 ? (
         <div className="card shadow-sm">
-          <div className="card-body text-center py-5">
+          <div className="card-body text-center empty-state">
             <div className="text-muted">Наборы данных не найдены</div>
           </div>
         </div>
       ) : (
-        <div className="row g-3">
-          {filteredItems.map((item) => {
+        <div className="row g-3 osdr-list">
+          {filteredItems.map((item: any, index: number) => {
             const isExpanded = expandedItems.has(item.id)
             return (
-              <div key={item.id} className="col-md-6 col-lg-4">
-                <div className="card shadow-sm h-100">
+              <div key={item.id} className="col-md-6 col-lg-4" style={{ '--index': index } as React.CSSProperties}>
+                <div className="card shadow-sm h-100 osdr-card">
                   <div className="card-body">
                     <div className="d-flex justify-content-between align-items-start mb-2">
                       <div>
                         <h6 className="card-title mb-1 fw-bold">{item.dataset_id || `ID: ${item.id}`}</h6>
                         {item.status && (
-                          <span className="badge bg-success">{item.status}</span>
+                          <span className="badge bg-success status-badge">{item.status}</span>
                         )}
                       </div>
                       {item.rest_url && (
@@ -271,7 +170,6 @@ export default function OsdrPage() {
         </div>
       )}
 
-      {/* Информация о результатах */}
       {!loading && filteredItems.length > 0 && (
         <div className="mt-4 text-center text-muted small">
           Показано {filteredItems.length} из {totalCount} наборов данных
@@ -279,5 +177,13 @@ export default function OsdrPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function OsdrPage() {
+  return (
+    <OsdrProvider>
+      <OsdrContent />
+    </OsdrProvider>
   )
 }

@@ -67,3 +67,13 @@ async def iss_trend_handler(
     except Exception as e:
         raise InternalServerError(detail=f"Error calculating ISS trend: {str(e)}")
 
+
+async def clear_iss_data_handler(session: AsyncSession) -> dict[str, Any]:
+    """Очистить все данные ISS из базы"""
+    try:
+        repo = IssRepo(session)
+        deleted_count = await repo.clear_all_data()
+        return {"success": True, "deleted_count": deleted_count}
+    except Exception as e:
+        raise InternalServerError(detail=f"Error clearing ISS data: {str(e)}")
+

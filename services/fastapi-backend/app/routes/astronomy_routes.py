@@ -1,12 +1,15 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 from typing import Optional
 from app.handlers.astronomy_handler import astronomy_events_handler
+from app.middleware.rate_limit import limiter
 
 router = APIRouter()
 
 
 @router.get("/astro/events")
+@limiter.limit("50/minute")
 async def events(
+    request: Request,
     days: Optional[int] = Query(7, ge=1, le=7, description="Number of days from today (NEO API ограничен 7 днями)"),
     limit: Optional[int] = Query(None, ge=1, le=1000, description="Maximum number of events to return"),
 ):
