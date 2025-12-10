@@ -12,7 +12,7 @@ function DashboardContent() {
     <div className="container pb-5">
       {/* Метрики МКС */}
       <section className="mb-4">
-        <h2 className="h5 mb-3">Метрики МКС</h2>
+        <h2 className="h5 mb-3">МКС данные</h2>
         <IssMetrics
           velocity={issData.payload?.velocity}
           altitude={issData.payload?.altitude}
@@ -26,7 +26,6 @@ function DashboardContent() {
 
       {/* Визуализация МКС */}
       <section className="mb-4" style={{ animation: 'none' }}>
-        <h2 className="h5 mb-3">Визуализация МКС</h2>
         <div className="row g-3">
           <div className="col-12">
             <div className="card shadow-sm h-100">

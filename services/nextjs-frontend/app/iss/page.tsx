@@ -12,7 +12,7 @@ function IssContent() {
   return (
     <div className="container py-4">
       <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3 className="mb-0">МКС данные</h3>
+        <h2 className="mb-0">МКС данные</h2>
         <div className="d-flex gap-2 export-buttons">
           <button onClick={handleExportExcel} className="btn btn-sm btn-success hover-scale" type="button" title="Экспорт в Excel">
             Excel
